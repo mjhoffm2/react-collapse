@@ -75,6 +75,17 @@ export class Collapse extends React.PureComponent {
       }
     }
     onRest();
+    const checkForNewHeight = () => {
+      if(t.state.currentState === IDLING) {
+        const h = t.wrapper.clientHeight;
+
+        if(t.state.to !== h) {
+          t.setState({ to: h });
+        }
+      }
+    }
+    const interval = setInterval(checkForNewHeight.bind(this), 1000);
+    this.setState({ interval: interval });
   }
 
 
@@ -122,6 +133,7 @@ export class Collapse extends React.PureComponent {
 
   componentWillUnmount() {
     cancelAnimationFrame(this.raf);
+    clearInterval(this.state.interval);
   }
 
 
