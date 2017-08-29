@@ -76,11 +76,11 @@ export class Collapse extends React.PureComponent {
     }
     onRest();
     const checkForNewHeight = () => {
-      if(this.state.currentState === IDLING) {
-        const h = this.wrapper.clientHeight;
+      if(t.state.currentState === IDLING) {
+        const h = t.wrapper.clientHeight;
 
-        if(this.state.to !== h) {
-          this.setState({ to: h });
+        if(t.state.to !== h) {
+          t.setState({ to: h });
         }
       }
     }
