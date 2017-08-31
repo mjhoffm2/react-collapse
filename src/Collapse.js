@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import {Motion, spring} from 'react-motion';
 
 const SPRING_PRECISION = 1;
+const HEIGHT_POLL_INTERVAL = 1000;
 
 
 const WAITING = 'WAITING';
@@ -24,6 +25,7 @@ export class Collapse extends React.PureComponent {
     isOpened: PropTypes.bool.isRequired,
     springConfig: PropTypes.objectOf(PropTypes.number),
     forceInitialAnimation: PropTypes.bool,
+    pollContentHeight: PropTypes.bool,
 
     hasNestedCollapse: PropTypes.bool,
 
@@ -44,6 +46,7 @@ export class Collapse extends React.PureComponent {
     springConfig: {},
     forceInitialAnimation: false,
     hasNestedCollapse: false,
+    pollContentHeight: false,
     fixedHeight: -1,
     style: {},
     theme: css,
@@ -58,7 +61,8 @@ export class Collapse extends React.PureComponent {
     this.state = {
       currentState: IDLING,
       from: 0,
-      to: 0
+      to: 0,
+      heightPollInterval: null
     };
   }
 
@@ -75,19 +79,22 @@ export class Collapse extends React.PureComponent {
       }
     }
     onRest();
-    const checkForNewHeight = () => {
-      if(this.state.currentState === IDLING) {
-        const h = this.wrapper.clientHeight;
 
-        if(this.state.to !== h) {
-          this.setState({ to: h });
-        }
-      }
+    if(this.props.pollContentHeight) {
+      const interval = setInterval(checkForNewHeight.bind(this), HEIGHT_POLL_INTERVAL);
+      this.setState({ heightPollInterval: interval });
     }
-    const interval = setInterval(checkForNewHeight.bind(this), 1000);
-    this.setState({ interval: interval });
   }
 
+  checkForNewHeight() {
+    if(this.state.currentState === IDLING) {
+      const h = this.wrapper.clientHeight;
+
+      if(this.state.to !== h) {
+        this.setState({ to: h });
+      }
+    }
+  }
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.hasNestedCollapse) {
@@ -101,6 +108,16 @@ export class Collapse extends React.PureComponent {
       }
     } else if (this.state.currentState === IDLING && (nextProps.isOpened || this.props.isOpened)) {
       this.setState({currentState: WAITING});
+    }
+
+    if (nextProps.pollContentHeight !== this.props.pollContentHeight) {
+      if(nextProps.pollContentHeight) {
+        const interval = setInterval(checkForNewHeight.bind(this), HEIGHT_POLL_INTERVAL);
+        this.setState({ heightPollInterval: interval });
+      } else {
+        clearInterval(this.state.heightPollInterval);
+        this.setState({ heightPollInterval: null });
+      }
     }
   }
 
@@ -133,7 +150,10 @@ export class Collapse extends React.PureComponent {
 
   componentWillUnmount() {
     cancelAnimationFrame(this.raf);
-    clearInterval(this.state.interval);
+
+    if(this.state.heightPollInterval !== null) {
+      clearInterval(this.state.heightPollInterval);
+    }
   }
 
 
